@@ -91,50 +91,6 @@ for i in range(RHS_Z_inh.shape[0]):
 for j in range(RHS_W_inh.shape[0]):
     RHS_W_inh[j] = sym.lambdify((V, H, Z_inh), RHS_W_inh[j], "numpy")
 
-
-# # GENERATING THE TARGET SIGNAL
-# V = -70 + 40*np.random.rand(1,2)
-# M = np.random.rand(1,2)
-# V_half = -30
-# W_inh = np.array([[0, -1.4, -0.9, 0]]) #np.array([[0, 0.8, 0.8, 0]]) ???
-# W_ex = np.array([[0, 0.0, 0.0, 0]])
-# dt = 0.1
-# vals_V = [[V[0,0]],[V[0,1]]]
-# vals_M = [[M[0,0]],[M[0,1]]]
-# t = [0]
-# stoptime = 20000
-# for i in range(int(stoptime/dt)):
-#     for j in range(len(M_eqs)):
-#         M[0, j] = M[0, j] + dt*M_eqs[j](V, M, V_half)
-#         vals_M[j].append(M[0, j])
-#
-#     for j in range(len(F)):
-#         V[0,j] = V[0,j] + dt*F[j](V, M, W_inh, W_ex,V_half)
-#         vals_V[j].append(V[0,j])
-#     t.append(t[-1] + dt)
-#
-# # PLOTTING THE RESULTS
-# fr1 = 1/(1+np.exp(-(np.array(vals_V[0]) - V_half)/k_v))
-# fr2 = 1/(1+np.exp(-(np.array(vals_V[1]) - V_half)/k_v))
-#
-# startime = 5000
-# start = int(startime/dt)
-# fig = plt.figure(figsize=(10,4))
-# plt.plot(t[start:], fr1[start:], "k--", linewidth = 3, alpha = 0.7)
-# plt.plot(t[start:], fr2[start:], "r-", linewidth = 3, alpha = 0.7)
-# plt.grid(True)
-# plt.show()
-#
-# # SAVING TARGET SIGNAL
-# file = open("signal_target.dat","wb+")
-# data = dict()
-# data["vals_V"] = vals_V
-# data["vals_M"] = vals_M
-# data["t"] = t
-# data["V_half"] = V_half
-# data["k_v"] = k_v
-# pickle.dump(data, file)
-
 # LOADING THE TARGET SIGNAL
 data = pickle.load(open("signal_target.dat", "rb+"))
 vals_V_target = data["vals_V"]
