@@ -5,7 +5,6 @@ import pickle
 
 num_nrns = 2
 # SYMBOLIC VARIABLES
-x = sym.Symbol("x")
 V = sym.MatrixSymbol("V", 1, num_nrns)
 M = sym.MatrixSymbol("M", 1, num_nrns)
 W_inh = sym.MatrixSymbol("W_inh", 1, num_nrns*num_nrns)
@@ -39,7 +38,7 @@ for i in range(num_nrns):
     for j in range(num_nrns):
         IsynI += g_SynI*W_inh[0, j*num_nrns + i]*(V[0, i] - E_SynI)*(1 / (1 + sym.exp(-(V[0, j] - V_half) / k_v)))
 
-    F[i] = - Iad - Il - Itonic - IsynI
+    F[i] = -Iad - Il - Itonic - IsynI
     F[i] = F[i]/C
 
 # defining rhs of '''dm/dt = M(m,v)''' symbolically
@@ -47,36 +46,43 @@ M_eqs = np.zeros(num_nrns, dtype=object)
 for i in range(num_nrns):
     M_eqs[i] = (k_ad * (1 / (1 + sym.exp(-(V[0,i] - V_half) / k_v))) - M[0,i]) / tau_ad
 
-
 print("\nfunction F is defined : \n{}".format(F))
 print("\nfunction M is defined : \n{}".format(M_eqs))
+
+# CASTING SYMBOLIC FUNCTION INTO NUMPY (LAMBDIFY)
+for i in range(F.shape[0]):
+    F[i] = sym.lambdify((V,M,W_inh,V_half),F[i],"numpy")
+    M_eqs[i] = sym.lambdify((V,M,V_half),M_eqs[i],"numpy")
+
 
 # GENERATING THE TARGET SIGNAL
 V = -70 + 40*np.random.rand(1,2)
 M = np.random.rand(1,2)
 V_half = -30
-W_inh = np.array([[0, -1.4, -0.9, 0]]) #np.array([[0, 0.8, 0.8, 0]]) ???
-W_ex = np.array([[0, 0.0, 0.0, 0]])
+W_inh = np.array([[0, 0.4, 0.2, 0]])
 dt = 0.1
 vals_V = [[V[0,0]],[V[0,1]]]
 vals_M = [[M[0,0]],[M[0,1]]]
 t = [0]
 stoptime = 20000
+
 for i in range(int(stoptime/dt)):
+
     for j in range(len(M_eqs)):
         M[0, j] = M[0, j] + dt*M_eqs[j](V, M, V_half)
         vals_M[j].append(M[0, j])
 
     for j in range(len(F)):
-        V[0,j] = V[0,j] + dt*F[j](V, M, W_inh, W_ex,V_half)
+        V[0,j] = V[0,j] + dt*F[j](V, M, W_inh, V_half)
         vals_V[j].append(V[0,j])
+
     t.append(t[-1] + dt)
 
 # PLOTTING THE RESULTS
 fr1 = 1/(1+np.exp(-(np.array(vals_V[0]) - V_half)/k_v))
 fr2 = 1/(1+np.exp(-(np.array(vals_V[1]) - V_half)/k_v))
 
-startime = 5000
+startime = 3000
 start = int(startime/dt)
 fig = plt.figure(figsize=(10,4))
 plt.plot(t[start:], fr1[start:], "k--", linewidth = 3, alpha = 0.7)
