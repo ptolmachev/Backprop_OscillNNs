@@ -77,7 +77,7 @@ for i in range(V.shape[1]):
 RHS_W_inh = np.zeros(num_nrns*num_nrns, dtype=object)
 for j in range(num_nrns*num_nrns):
     for k in range(num_nrns):
-        RHS_W_inh[j] -= (E.diff(V[0, k])) * Z_inh[k, j] #
+        RHS_W_inh[j] -= (E.diff(V[0, k])) * Z_inh[k, j]
 
 # CASTING SYMBOLIC FUNCTION INTO NUMPY (LAMBDIFY)
 for i in range(F.shape[0]):
@@ -112,7 +112,7 @@ for i in range(vals_Z_inh.shape[0]):
         vals_Z_inh[i,j].append(Z_inh[i,j])
 
 vals_W_inh = np.empty((1, num_nrns*num_nrns), dtype=list)
-for i in range(vals_W_inh.shape[0]):
+for i in range(vals_W_inh.shape[1]):
     vals_W_inh[0, i] = []
     vals_W_inh[0, i].append(W_inh[0, i])
 
@@ -140,9 +140,9 @@ for i in range(int(stoptime/dt)):
     H[0,0] = vals_V_target[0][i]
     H[0,1] = vals_V_target[1][i]
 
-    for j in range(W_inh.shape[0]):
+    for j in range(W_inh.shape[1]):
         if j == 1 : #changing only one of parameters
-            W_inh[0, j] = W_inh[0, j] + 0.001*dt*RHS_W_inh[j](V, H, Z_inh)
+            W_inh[0, j] = W_inh[0, j] + 0.01*dt*RHS_W_inh[j](V, H, Z_inh)
             vals_W_inh[0, j].append(W_inh[0, j])
     t.append(t[-1] + dt)
 
@@ -151,13 +151,15 @@ fr1 = 1/(1+np.exp(-(np.array(vals_V[0]) - V_half)/k_v))
 fr2 = 1/(1+np.exp(-(np.array(vals_V[1]) - V_half)/k_v))
 
 startime = 1
-start = int(startime/dt)
-fig = plt.figure(figsize=(10,4))
-plt.plot(t[start:], fr1[start:], "k--", linewidth = 3, alpha = 0.7)
-plt.plot(t[start:], fr2[start:], "r-", linewidth = 3, alpha = 0.7)
-plt.grid(True)
-plt.show()
+# start = int(startime/dt)
+# fig = plt.figure(figsize=(10,4))
+# plt.plot(t[start:], fr1[start:], "k--", linewidth = 3, alpha = 0.7)
+# plt.plot(t[start:], fr2[start:], "r-", linewidth = 3, alpha = 0.7)
+# plt.grid(True)
+# plt.show()
 
 print(W_inh)
-
-
+fig = plt.figure(figsize=(10,4))
+plt.plot(t,vals_W_inh[0, 1], "k--", linewidth = 3, alpha = 0.7)
+plt.grid(True)
+plt.show()
