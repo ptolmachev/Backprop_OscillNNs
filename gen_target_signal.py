@@ -3,7 +3,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pickle
 
-num_nrns = 2
+def squash(v, V_half,k_v):
+    return 1/(1+np.exp(-(np.array(v) - V_half)/k_v))
+
+num_nrns = 3
 # SYMBOLIC VARIABLES
 V = sym.MatrixSymbol("V", 1, num_nrns)
 M = sym.MatrixSymbol("M", 1, num_nrns)
@@ -23,7 +26,7 @@ E_L = -60
 E_SynE = 0.0
 E_SynI = -75.0
 tau_ad = 2000
-drive = np.array([[0.5,0.55]])
+drive = np.array([[0.5,0.55,0.5]])
 
 # PREPARING THE EQUATIONS
 # defining rhs of '''dv/dt = F(m,v,w)''' symbolically
@@ -56,15 +59,16 @@ for i in range(F.shape[0]):
 
 
 # GENERATING THE TARGET SIGNAL
-V = -70 + 40*np.random.rand(1,2)
-M = np.random.rand(1,2)
+V = -70 + 40*np.random.rand(1,num_nrns)
+M = np.random.rand(1,num_nrns)
 V_half = -30
-W_inh = np.array([[0, 0.4, 0.2, 0]])
+W_inh = np.array([[0, 0.4, 0.2, 0.4, 0, 0.4, 0.2, 0.4, 0]])
 dt = 0.1
-vals_V = [[V[0,0]],[V[0,1]]]
-vals_M = [[M[0,0]],[M[0,1]]]
+vals_V = [[V[0,i]] for i in range(num_nrns)]
+vals_fr = [[squash(V[0,i], V_half, k_v)] for i in range(num_nrns)]
+vals_M = [[M[0,i]] for i in range(num_nrns)]
 t = [0]
-stoptime = 20000
+stoptime = 40000
 
 for i in range(int(stoptime/dt)):
 
@@ -75,18 +79,19 @@ for i in range(int(stoptime/dt)):
     for j in range(len(F)):
         V[0,j] = V[0,j] + dt*F[j](V, M, W_inh, V_half)
         vals_V[j].append(V[0,j])
-
+        vals_fr[j].append(squash(V[0, j], V_half, k_v))
     t.append(t[-1] + dt)
 
 # PLOTTING THE RESULTS
-fr1 = 1/(1+np.exp(-(np.array(vals_V[0]) - V_half)/k_v))
-fr2 = 1/(1+np.exp(-(np.array(vals_V[1]) - V_half)/k_v))
+# fr1 = squash(vals_V[0], V_half, k_v)
+# fr2 = squash(vals_V[1], V_half, k_v)
 
-startime = 3000
+startime = 15000
 start = int(startime/dt)
 fig = plt.figure(figsize=(10,4))
-plt.plot(t[start:], fr1[start:], "k--", linewidth = 3, alpha = 0.7)
-plt.plot(t[start:], fr2[start:], "r-", linewidth = 3, alpha = 0.7)
+styles = ["k", "r", "g", "b"]
+for i in range(num_nrns):
+    plt.plot(t[start:], vals_fr[i][start:], styles[i], linewidth = 3, alpha = 0.7)
 plt.grid(True)
 plt.show()
 
@@ -94,8 +99,11 @@ plt.show()
 file = open("signal_target.dat","wb+")
 data = dict()
 data["vals_V"] = vals_V
+data["vals_fr"] = vals_fr
 data["vals_M"] = vals_M
 data["t"] = t
 data["V_half"] = V_half
 data["k_v"] = k_v
+data["dt"] = dt
+data["true_weights"] = W_inh
 pickle.dump(data, file)
